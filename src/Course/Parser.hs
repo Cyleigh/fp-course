@@ -621,8 +621,6 @@ personParser = (\ag fn sn issmkr ph -> Person ag fn sn issmkr ph) <$>
                 <*> smokerParser <* spaces1 
                 <*> phoneParser
   
-
-
 {-
  ageParser >>= \ag ->
                spaces1 >>> 

@@ -70,44 +70,60 @@ the contents of c
 
 -}
 
+{-
+Problem --
+  Given a single argument of a file name, read that file,
+  each line of that file contains the name of another file,
+  read the referenced file and print out its name and contents.
+
+-}
+
+
 -- /Tip:/ use @getArgs@ and @run@
 main ::
   IO ()
-main =
-  error "todo: Course.FileIO#main"
+main = getArgs >>= \arg ->
+         case arg of
+          Nil -> putStrLn "give me an argument"
+          h :. _ -> run h
 
 type FilePath =
   Chars
 
 -- /Tip:/ Use @getFiles@ and @printFiles@.
 run ::
-  Chars
+  FilePath
   -> IO ()
-run =
-  error "todo: Course.FileIO#run"
+run name = 
+  readFile name >>= \c ->
+  getFiles (lines c) >>= \z ->
+  printFiles z
+  -- read the initial file
+  --- split it into lines
+  --- for each line : getThatFile and then print that file
+
 
 getFiles ::
   List FilePath
   -> IO (List (FilePath, Chars))
-getFiles =
-  error "todo: Course.FileIO#getFiles"
+getFiles paths = sequence ( getFile <$> paths)
 
 getFile ::
   FilePath
   -> IO (FilePath, Chars)
-getFile =
-  error "todo: Course.FileIO#getFile"
+getFile name = (\c -> (name, c)) <$> readFile name
+--readFile path >>= \contents -> pure (path, contents)
+-- List Char
 
 printFiles ::
   List (FilePath, Chars)
   -> IO ()
-printFiles =
-  error "todo: Course.FileIO#printFiles"
+printFiles x = void (sequence (uncurry printFile <$> x))
+-- void . sequence . (<$>) (uncurry printFile)
 
 printFile ::
   FilePath
   -> Chars
   -> IO ()
-printFile =
-  error "todo: Course.FileIO#printFile"
-
+printFile name contents =
+  putStrLn ("============ " ++ name) *> putStrLn contents
