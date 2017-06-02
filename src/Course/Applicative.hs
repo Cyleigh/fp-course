@@ -61,8 +61,7 @@ infixl 4 <*>
   (a -> b)
   -> f a
   -> f b
-(<$>) =
-  error "todo: Course.Applicative#(<$>)"
+(<$>) atob fa = (pure atob) <*> fa
 
 -- | Insert into Id.
 --
@@ -74,14 +73,14 @@ instance Applicative Id where
   pure ::
     a
     -> Id a
-  pure =
-    error "todo: Course.Applicative pure#instance Id"
+  pure = Id
   (<*>) :: 
     Id (a -> b)
     -> Id a
     -> Id b
-  (<*>) =
-    error "todo: Course.Applicative (<*>)#instance Id"
+
+  (<*>) (Id f) (Id a) = Id (f a)
+
 
 -- | Insert into a List.
 --
@@ -93,14 +92,14 @@ instance Applicative List where
   pure ::
     a
     -> List a
-  pure =
-    error "todo: Course.Applicative pure#instance List"
+  pure a = a :. Nil
   (<*>) ::
     List (a -> b)
     -> List a
     -> List b
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance List"
+  (<*>) listf lista = flatMap (\atob -> map atob lista) listf
+  -- listf :: List (a -> b)
+  -- lista :: List a
 
 -- | Insert into an Optional.
 --
@@ -118,14 +117,12 @@ instance Applicative Optional where
   pure ::
     a
     -> Optional a
-  pure =
-    error "todo: Course.Applicative pure#instance Optional"
+  pure a = Full a
   (<*>) ::
     Optional (a -> b)
     -> Optional a
     -> Optional b
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance Optional"
+  (<*>) = applyOptional
 
 -- | Insert into a constant function.
 --
@@ -145,18 +142,22 @@ instance Applicative Optional where
 -- 15
 --
 -- prop> pure x y == x
+-- SKI Combinator calculus
 instance Applicative ((->) t) where
   pure ::
     a
-    -> ((->) t a)
-  pure =
-    error "todo: Course.Applicative pure#((->) t)"
+    -> t
+    -> a 
+  pure = const
   (<*>) ::
-    ((->) t (a -> b))
-    -> ((->) t a)
-    -> ((->) t b)
-  (<*>) =
-    error "todo: Course.Apply (<*>)#instance ((->) t)"
+    (t -> a -> b)
+    -> (t -> a)
+    -> t
+    -> b
+  (<*>) tab ta t = tab t (ta t)
+    -- tab :: t -> (a -> b)
+    -- ta :: t -> a
+    -- t :: t
 
 
 -- | Apply a binary function in the environment.
@@ -184,8 +185,10 @@ lift2 ::
   -> f a
   -> f b
   -> f c
-lift2 =
-  error "todo: Course.Applicative#lift2"
+lift2 abc fa fb = (abc <$> fa) <*> fb
+
+
+
 
 -- | Apply a ternary function in the environment.
 --
@@ -216,8 +219,7 @@ lift3 ::
   -> f b
   -> f c
   -> f d
-lift3 =
-  error "todo: Course.Applicative#lift3"
+lift3 abcd fa fb fc = lift2 abcd fa fb <*> fc
 
 -- | Apply a quaternary function in the environment.
 --
@@ -249,8 +251,7 @@ lift4 ::
   -> f c
   -> f d
   -> f e
-lift4 =
-  error "todo: Course.Applicative#lift4"
+lift4 func fa fb fc fd = lift3 func fa fb fc <*> fd
 
 -- | Apply, discarding the value of the first argument.
 -- Pronounced, right apply.
@@ -275,8 +276,7 @@ lift4 =
   f a
   -> f b
   -> f b
-(*>) =
-  error "todo: Course.Applicative#(*>)"
+(*>) = lift2 (flip const) 
 
 -- | Apply, discarding the value of the second argument.
 -- Pronounced, left apply.
@@ -301,8 +301,7 @@ lift4 =
   f b
   -> f a
   -> f b
-(<*) =
-  error "todo: Course.Applicative#(<*)"
+(<*) = lift2 (const)
 
 -- | Sequences a list of structures to a structure of list.
 --
@@ -324,8 +323,12 @@ sequence ::
   Applicative f =>
   List (f a)
   -> f (List a)
-sequence =
-  error "todo: Course.Applicative#sequence"
+sequence Nil = pure Nil
+sequence (h :. tl) = lift2 (:.) h (sequence tl)
+-- foldRight (lift2 (:.)) (pure Nil)
+  -- h :: f a
+  -- tl :: List (f a)
+  -- lift2  (:.) f x -> f (List x) -> f (List x)
 
 -- | Replicate an effect a given number of times.
 --
@@ -348,8 +351,12 @@ replicateA ::
   Int
   -> f a
   -> f (List a)
-replicateA =
-  error "todo: Course.Applicative#replicateA"
+replicateA 0 _ = pure Nil
+replicateA num fa = sequence (replicate num fa)
+  -- num :: Int
+  -- fa  :: f a
+  -- ??  :: f (List a)
+  --error "todo: Course.Applicative#replicateA"
 
 -- | Filter a list with a predicate that produces an effect.
 --
@@ -376,8 +383,7 @@ filtering ::
   (a -> f Bool)
   -> List a
   -> f (List a)
-filtering =
-  error "todo: Course.Applicative#filtering"
+filtering p = foldRight (\a -> lift2 (\b -> if b then (a:.) else id) (p a)) (pure Nil)
 
 -----------------------
 -- SUPPORT LIBRARIES --
