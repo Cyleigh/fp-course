@@ -112,8 +112,7 @@ get = State (\s -> (s, s))
 put ::
   s
   -> State s ()
-put =
-  error "todo: Course.State#put"
+put s = State (\t -> ((),s))
 
 -- | Find the first element in a `List` that satisfies a given predicate.
 -- It is possible that no element is found, hence an `Optional` result.
